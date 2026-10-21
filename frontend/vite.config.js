@@ -24,10 +24,10 @@ export default defineConfig({
         theme_color: '#0e1048',
         icons: [
           {
-            src: '/icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            src: '/image.png',
+            sizes: '221x256',
+            type: 'image/png',
+            purpose: 'any'
           }
         ]
       }

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input.jsx'
 import { API_BASE_URL } from '../utils/auth'
 
 // Served straight from /public, so it is not bundled twice
-const logo = '/icon.svg'
+const logo = '/image.png'
 
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState('')
@@ -104,7 +104,7 @@ const LoginPage = ({ onLogin }) => {
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3, type: 'spring', stiffness: 260, damping: 18 }}
-                  className="relative h-16 w-16 rounded-2xl shadow-lg"
+                  className="relative h-20 w-20 object-contain drop-shadow-lg"
                 />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
