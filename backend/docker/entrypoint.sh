@@ -19,7 +19,7 @@ fi
 # than at build time.
 php artisan config:cache
 php artisan route:cache
-php artisan view:cache
+# No view:cache - this is an API, there are no Blade templates to compile.
 
 # Opt-in, because an automatic migration on every deploy is a good way to be
 # surprised. Set RUN_MIGRATIONS=true on the first deploy and after schema work.

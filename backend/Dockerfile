@@ -44,7 +44,19 @@ COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
-RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+# Paths are listed one by one rather than with {a,b,c} brace expansion:
+# Alpine's /bin/sh is busybox ash, which does not expand braces and would
+# silently create a single directory literally named "{cache,sessions,views}".
+#
+# resources/views is included because it is empty in this app, and git does not
+# track empty directories, so it never arrives with the source.
+RUN mkdir -p \
+      storage/framework/cache/data \
+      storage/framework/sessions \
+      storage/framework/views \
+      storage/logs \
+      bootstrap/cache \
+      resources/views \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
