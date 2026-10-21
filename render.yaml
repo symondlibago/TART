@@ -1,0 +1,112 @@
+# Render blueprint for the Event Tracker.
+#
+# In Render: New -> Blueprint -> pick this repo. It creates both services.
+# The values marked sync:false are secrets you paste in the dashboard; they are
+# deliberately not in this file.
+#
+# Pick a region close to the Supabase project (Tokyo) - every query is a round
+# trip, so a backend in Oregon would add ~150ms to each one.
+
+services:
+  # ------------------------------------------------------------------ API
+  - type: web
+    name: event-tracker-api
+    runtime: docker
+    repo: # filled in by Render when you connect the repo
+    region: singapore
+    plan: starter
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: Event Tracker
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false            # php artisan key:generate --show
+      - key: APP_URL
+        value: https://event-tracker-api.onrender.com
+      - key: APP_BUSINESS_TIMEZONE
+        value: Asia/Manila
+      - key: LOG_CHANNEL
+        value: stderr          # Render collects stdout/stderr
+      - key: LOG_LEVEL
+        value: warning
+
+      # Supabase Postgres - session pooler (IPv4), port 5432
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: aws-0-ap-northeast-1.pooler.supabase.com
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: DB_PERSISTENT
+        value: "true"
+      - key: DB_EMULATE_PREPARES
+        value: "true"
+
+      # Supabase Storage for attendance photos
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: attendance
+
+      # Comma separated. Must match the static site's URL exactly, or the
+      # browser will block every API call with a CORS error.
+      - key: FRONTEND_URL
+        value: https://event-tracker-web.onrender.com
+
+      # Set to "true" for the first deploy and whenever migrations change.
+      - key: RUN_MIGRATIONS
+        value: "false"
+
+      - key: CACHE_DRIVER
+        value: file
+      - key: SESSION_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+
+  # ------------------------------------------------------------- Frontend
+  - type: web
+    name: event-tracker-web
+    runtime: static
+    repo: # filled in by Render when you connect the repo
+    rootDir: frontend
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    staticPublishPath: ./dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL
+        value: https://event-tracker-api.onrender.com/api
+    routes:
+      # React Router owns the URLs, so every path must serve index.html.
+      # Without this, refreshing on /attendance returns a 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

@@ -1,0 +1,26 @@
+# Secrets. The per-project .gitignore files cover these too; this is a
+# second line of defence for the whole repo.
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+vendor/
+dist/
+dev-dist/
+
+# Laravel runtime
+backend/storage/*.key
+backend/storage/app/public/attendance/
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/logs/*
+backend/public/storage
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
