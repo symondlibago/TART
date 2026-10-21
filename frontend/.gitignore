@@ -69,7 +69,9 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
+# NOTE: "public" was listed here by the generic template. In Gatsby that folder
+# is build output, but this is Vite - public/ holds source assets (the favicon
+# and logo) that MUST be committed, or they are missing from the deployed site.
 
 # Storybook build outputs
 .out
