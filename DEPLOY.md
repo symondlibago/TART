@@ -1,13 +1,18 @@
-# Deploying to Render
+# Deploying
 
-Two services come out of this repo:
-
-| Service | What it is | Render type |
+| Part | Host | Notes |
 |---|---|---|
-| `event-tracker-api` | Laravel API | Web Service (Docker) |
-| `event-tracker-web` | React frontend | Static Site |
+| React frontend | **Vercel** | Root directory `frontend` |
+| Laravel API | **Render** | Web Service (Docker), root directory `backend` |
+| Database + photo storage | **Supabase** | Already running |
 
-The database is Supabase and stays where it is.
+The two hosts have to know about each other:
+
+- Render needs `FRONTEND_URL` = the Vercel URL (this is the CORS allow-list)
+- Vercel needs `VITE_API_URL` = the Render URL + `/api`
+
+Get either wrong and the browser blocks every API call. It is the most common
+thing to trip over.
 
 ---
 
@@ -42,11 +47,21 @@ Copy the whole thing including the `base64:` prefix.
 
 ---
 
-## Deploy
+## Deploy the API on Render
 
-In Render: **New → Blueprint**, pick your repo. It reads [`render.yaml`](render.yaml) and creates both services.
+**New → Web Service**, connect the repo, then set:
 
-You'll be asked for the values marked `sync: false`:
+| Setting | Value |
+|---|---|
+| Language / Runtime | **Docker** |
+| Root Directory | `backend` |
+| Region | **Singapore** |
+| Branch | `main` |
+| Health Check Path | `/` |
+
+Render finds `backend/Dockerfile` on its own.
+
+Then add the environment variables:
 
 | Variable | Where it comes from |
 |---|---|
@@ -60,19 +75,19 @@ You'll be asked for the values marked `sync: false`:
 
 Set `RUN_MIGRATIONS=true` on the API service so the tables get created, then **set it back to `false`**. Leaving it on means every deploy runs migrations, which is a good way to be surprised one day.
 
-### Then fix the URLs
+### Then connect the two hosts
 
-Render assigns real URLs once the services exist. Update three variables so they match:
+Render only gives you the API's URL once the service exists, so this is a second pass:
 
-| Service | Variable | Value |
+| Where | Variable | Value |
 |---|---|---|
-| API | `APP_URL` | the API's URL |
-| API | `FRONTEND_URL` | the **frontend's** URL |
-| Frontend | `VITE_API_URL` | the API's URL **+ `/api`** |
+| Render | `APP_URL` | the Render URL |
+| Render | `FRONTEND_URL` | the Vercel URL, no trailing slash |
+| Vercel | `VITE_API_URL` | the Render URL **+ `/api`** |
 
-`FRONTEND_URL` is what the CORS policy allows. If it doesn't match the frontend exactly — including `https://` and no trailing slash — the browser blocks every API call. This is the single most common thing to get wrong.
-
-Changing `VITE_API_URL` needs a **rebuild**, not just a restart: Vite bakes it into the bundle at build time.
+On Vercel, add the variable under **Settings → Environment Variables**, then
+**Deployments → ⋯ → Redeploy**. Vite bakes the value into the bundle at build
+time, so a redeploy is required — restarting changes nothing.
 
 ---
 
