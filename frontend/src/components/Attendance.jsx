@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';
 import {
   Loader2, Search, Users, Clock, QrCode, HardDrive, Trash2, Download,
-  CalendarCheck, ImageOff, Copy, Check
+  CalendarCheck, ImageOff, Copy, Check, Clock3, Undo2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
-import { getAttendances, getPhotoUsage, purgePhotos } from '../utils/auth';
+import {
+  getAttendances, getPhotoUsage, purgePhotos, updateDayType, FULL_DAY, HALF_DAY,
+} from '../utils/auth';
 import { AnimatedDatePicker } from './AnimatedDatePicker';
 import { ConfirmDialog } from './ConfirmDialog';
 import { LoadMoreBar } from './LoadMoreBar';
@@ -51,14 +53,34 @@ function RecordsPanel() {
   const filters = useMemo(() => ({ date, search }), [date, search]);
 
   const {
-    items: filtered, meta, loading, loadingMore, loadMore,
+    items: filtered, meta, loading, loadingMore, loadMore, setItems,
   } = usePagedList(getAttendances, filters);
+
+  const [savingId, setSavingId] = useState(null);
+
+  // Updates the row in place rather than refetching the page: one request.
+  const setDayType = async (record, dayType) => {
+    setSavingId(record.id);
+    try {
+      const response = await updateDayType(record.id, dayType);
+      const data = await response.json();
+      if (data.success) {
+        setItems((prev) => prev.map((r) =>
+          r.id === record.id ? { ...r, day_type: dayType } : r
+        ));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const exportCsv = () => {
     const rows = [
-      ['Date', 'Time In', 'Code', 'Name', 'Position'],
+      ['Date', 'Time In', 'Day Type', 'Code', 'Name', 'Position'],
       ...filtered.map((r) => [
-        r.attendance_date, formatTime(r.timed_in_at),
+        r.attendance_date, formatTime(r.timed_in_at), r.day_type ?? FULL_DAY,
         r.employee_code, r.employee_name, r.position ?? '',
       ]),
     ];
@@ -131,7 +153,9 @@ function RecordsPanel() {
                     <th className="p-5 text-[11px] font-bold text-gray-500 uppercase">Employee</th>
                     <th className="p-5 text-[11px] font-bold text-gray-500 uppercase">Date</th>
                     <th className="p-5 text-[11px] font-bold text-gray-500 uppercase">Time In</th>
+                    <th className="p-5 text-[11px] font-bold text-gray-500 uppercase">Day Type</th>
                     <th className="p-5 text-[11px] font-bold text-gray-500 uppercase">Size</th>
+                    <th className="p-5 text-[11px] font-bold text-gray-500 uppercase text-right">Actions</th>
                   </tr>
                 </thead>
                 <motion.tbody className="divide-y" layout>
@@ -173,7 +197,53 @@ function RecordsPanel() {
                             {formatTime(r.timed_in_at)}
                           </span>
                         </td>
+                        <td className="p-5">
+                          {(r.day_type ?? FULL_DAY) === HALF_DAY ? (
+                            <motion.span
+                              key="half"
+                              initial={{ scale: 0.85, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset bg-amber-50 text-amber-700 ring-amber-600/20"
+                            >
+                              <Clock3 className="h-3 w-3" /> Half Day
+                            </motion.span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset bg-slate-50 text-slate-600 ring-slate-500/20">
+                              Full Day
+                            </span>
+                          )}
+                        </td>
                         <td className="p-5 text-xs text-gray-400 tabular-nums">{formatBytes(r.photo_bytes)}</td>
+                        <td className="p-5 text-right">
+                          {(r.day_type ?? FULL_DAY) === HALF_DAY ? (
+                            <Button
+                              onClick={() => setDayType(r, FULL_DAY)}
+                              disabled={savingId === r.id}
+                              variant="ghost"
+                              size="sm"
+                              title="Undo - back to full day"
+                              className="text-gray-600 bg-gray-100 hover:bg-gray-600 hover:text-white rounded-lg"
+                            >
+                              {savingId === r.id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <><Undo2 className="h-4 w-4 mr-1.5" /> Undo</>}
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => setDayType(r, HALF_DAY)}
+                              disabled={savingId === r.id}
+                              variant="ghost"
+                              size="sm"
+                              title="Mark as half day"
+                              className="text-amber-700 bg-amber-50 hover:bg-amber-500 hover:text-white rounded-lg"
+                            >
+                              {savingId === r.id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <><Clock3 className="h-4 w-4 mr-1.5" /> Half Day</>}
+                            </Button>
+                          )}
+                        </td>
                       </motion.tr>
                     ))}
                   </AnimatePresence>

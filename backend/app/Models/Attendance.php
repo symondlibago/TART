@@ -14,10 +14,17 @@ class Attendance extends Model
         'employee_id',
         'attendance_date',
         'timed_in_at',
+        'day_type',
         'photo_path',
         'photo_url',
         'photo_bytes',
     ];
+
+    public const FULL_DAY = 'Full Day';
+
+    public const HALF_DAY = 'Half Day';
+
+    public const DAY_TYPES = [self::FULL_DAY, self::HALF_DAY];
 
     protected $casts = [
         'attendance_date' => 'date:Y-m-d',

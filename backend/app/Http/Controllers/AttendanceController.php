@@ -28,6 +28,7 @@ class AttendanceController extends Controller
                     'attendances.id',
                     'attendances.attendance_date',
                     'attendances.timed_in_at',
+                    'attendances.day_type',
                     'attendances.photo_url',
                     'attendances.photo_path',
                     'attendances.photo_bytes',
@@ -78,6 +79,46 @@ class AttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch attendance',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Switch a record between a full and a half day.
+     *
+     * Separate from the attendance record itself: timing in is the employee's
+     * action, classifying the day is the manager's, and the second must not
+     * require editing the first.
+     */
+    public function updateDayType(Request $request, $id)
+    {
+        $attendance = Attendance::find($id);
+
+        if (! $attendance) {
+            return response()->json(['success' => false, 'message' => 'Record not found'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'day_type' => 'required|in:' . implode(',', Attendance::DAY_TYPES),
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $attendance->update(['day_type' => $request->input('day_type')]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Marked as {$attendance->day_type}.",
+                'data' => ['id' => $attendance->id, 'day_type' => $attendance->day_type],
+            ]);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update the day type',
                 'error' => $e->getMessage(),
             ], 500);
         }

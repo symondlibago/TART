@@ -53,6 +53,7 @@ Route::middleware("auth:sanctum")->group(function () {
 
     // Attendance administration
     Route::get("attendances", [AttendanceController::class, "index"]);
+    Route::patch("attendances/{id}/day-type", [AttendanceController::class, "updateDayType"]);
     Route::get("attendances/photo-usage", [AttendanceController::class, "photoUsage"]);
     Route::delete("attendances/photos", [AttendanceController::class, "purgePhotos"]);
 

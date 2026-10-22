@@ -380,7 +380,9 @@ class EventController extends Controller
             'pax' => "{$required}|integer|min:0",
             'contact_person' => "{$required}|string|max:255",
             'location' => "{$required}|string|max:255",
-            'status' => 'sometimes|in:' . implode(',', Event::STATUSES),
+            // "Auto" is what the form sends for "let the date decide";
+            // resolveStatus() turns it into a real status before saving.
+            'status' => 'sometimes|in:' . implode(',', [...Event::STATUSES, Event::AUTO]),
             'remarks' => 'nullable|string',
         ];
     }

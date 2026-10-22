@@ -118,6 +118,16 @@ export const getAttendances = (params = {}) => {
 
 export const getPhotoUsage = () => authenticatedRequest('/attendances/photo-usage');
 
+/** dayType is 'Full Day' or 'Half Day'. */
+export const updateDayType = (id, dayType) =>
+  authenticatedRequest(`/attendances/${id}/day-type`, {
+    method: 'PATCH',
+    body: JSON.stringify({ day_type: dayType }),
+  });
+
+export const FULL_DAY = 'Full Day';
+export const HALF_DAY = 'Half Day';
+
 export const purgePhotos = (from, to) => authenticatedRequest('/attendances/photos', {
   method: 'DELETE',
   body: JSON.stringify({ from, to }),

@@ -84,14 +84,19 @@ class Event extends Model
      */
     public static function autoStatusFor(string $date): string
     {
-        $eventDay = Carbon::parse($date)->startOfDay();
-        $today = BusinessDate::now()->startOfDay();
+        // Compared as 'YYYY-MM-DD' strings, not as Carbon instances.
+        // Carbon compares absolute instants, so midnight in Manila and midnight
+        // in UTC on the same calendar day are eight hours apart and never
+        // "equal" - which silently made today's events read as Not Yet Started.
+        // Lexicographic order on this format matches date order exactly.
+        $eventDay = Carbon::parse($date)->toDateString();
+        $today = BusinessDate::today();
 
-        if ($eventDay->equalTo($today)) {
+        if ($eventDay === $today) {
             return 'Ongoing';
         }
 
-        return $eventDay->lessThan($today) ? 'Pending' : 'Not Yet Started';
+        return $eventDay < $today ? 'Pending' : 'Not Yet Started';
     }
 
     /**
